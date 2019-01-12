@@ -1,11 +1,13 @@
-//import Entity from '@core/Entity';
-//import Scene from '@core/Scene';
+import Scene from '@core/Scene';
 
-import Scene from '@common/core/Scene';
+import Entity from '@common/core/Entity';
 import Hierarchy from '@common/components/Hierarchy';
 
 const s = new Scene();
+s.entities.register(Entity);
 s.components.register(Hierarchy);
 
 const e = s.entities.add();
-console.log(e.value);
+const h = e.components.add(Hierarchy);
+
+console.log(h);

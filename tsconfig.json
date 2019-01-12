@@ -13,6 +13,7 @@
       "@core/*": [ "./core/*" ],
       "@common/*": [ "./common/*" ]
     },
+    "noImplicitAny": false,
     "lib": [
       "es6",
       "dom"

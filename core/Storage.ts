@@ -1,32 +1,26 @@
-import Component, { Constructor as ComponentConstructor } from '@core/Component';
+import Component from '@core/Component';
 import Entity from '@core/Entity';
 
-export interface IStorage {
-    add(entity: Entity): Component;
-    remove(entity: Entity): boolean;
-    get(entity: Entity): Optional<Component>;
-}
-
-export default class Storage<C extends Component> implements IStorage {
+export default class Storage {
     
-    private type: ComponentConstructor<C>;
-    private components: Map<string, C> = new Map();
+    private type;
+    private components = new Map();
     
-    public constructor(type: ComponentConstructor<C>) {
+    public constructor(type) {
         this.type = type;
     }
     
-    public add(entity: Entity): C {
+    public add(entity) {
         const component = new this.type(entity);
         this.components.set(entity.id, component);
         return component;
     }
     
-    public remove(entity: Entity): boolean {
+    public remove(entity) {
         return this.components.delete(entity.id);
     }
     
-    public get(entity: Entity): Optional<C> {
+    public get(entity) {
         return this.components.get(entity.id);
     }
     

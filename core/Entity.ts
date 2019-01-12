@@ -1,38 +1,36 @@
-import Component, { Constructor as ComponentConstructor } from '@core/Component';
+import Component from '@core/Component';
 import Scene from '@core/Scene';
 import Unique from '@core/Unique';
 
 export default class Entity extends Unique {
     
-    public scene: Scene;
-    public components: Components = new Components(this);
+    public scene;
+    public components = new Components(this);
     
-    public constructor(scene: Scene) {
+    public constructor(scene) {
         super();
         this.scene = scene;
     }
     
 }
 
-export type Constructor<E extends Entity = Entity> = new (scene: Scene<E>) => E;
-
 class Components {
     
-    private entity: Entity;
+    private entity;
     
-    public constructor(entity: Entity) {
+    public constructor(entity) {
         this.entity = entity;
     }
     
-    public add<C extends Component>(type: ComponentConstructor<C>): C {
+    public add(type) {
         return this.entity.scene.components.add(type)(this.entity);
     }
     
-    public remove<C extends Component>(type: ComponentConstructor<C>): boolean {
+    public remove(type) {
         return this.entity.scene.components.remove(type)(this.entity);
     }
     
-    public get<C extends Component>(type: ComponentConstructor<C>): Optional<C> {
+    public get(type) {
         return this.entity.scene.components.get(type)(this.entity);
     }
     

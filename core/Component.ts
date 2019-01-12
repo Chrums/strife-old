@@ -3,13 +3,11 @@ import Unique from '@core/Unique';
 
 export default class Component extends Unique {
     
-    public entity: Entity;
+    public entity;
     
-    public constructor(entity: Entity) {
+    public constructor(entity) {
         super();
         this.entity = entity;
     }
     
 }
-
-export type Constructor<C extends Component = Component> = new (entity: Entity) => C;

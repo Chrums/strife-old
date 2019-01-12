@@ -1,69 +1,66 @@
-import Component, { Constructor as ComponentConstructor } from '@core/Component';
-import Entity, { Constructor as EntityConstructor } from '@core/Entity';
-import Storage, { IStorage } from '@core/Storage';
+import Component from '@core/Component';
+import Entity from '@core/Entity';
+import Storage from '@core/Storage';
 
-export default class Scene<E extends Entity> {
+export default class Scene {
     
-    public entities: Entities<E>;
-    public components: Components<E> = new Components<E>(this);
-    
-    public constructor(type: EntityConstructor<E> = Entity as EntityConstructor<E>) {
-        this.entities = new Entities(this, type);
-    }
+    public entities = new Entities(this);;
+    public components = new Components(this);
     
 }
 
-export type Constructor<E extends Entity, S extends Scene<E>> = new (type: EntityConstructor<E>) => Scene<E>;
-
-class Entities<E extends Entity> {
+class Entities {
     
-    private scene: Scene<E>;
-    private type: EntityConstructor<E>;
+    private scene;
+    private type;
     
-    public constructor(scene: Scene<E>, type: EntityConstructor<E> = Entity as EntityConstructor<E>) {
+    public constructor(scene) {
         this.scene = scene;
+    }
+    
+    public register(type) {
         this.type = type;
     }
     
-    public add(): E {
+    public add() {
         const entity = new this.type(this.scene);
         // TODO: Implement this...
         return entity;
     }
     
-    public remove(entity: E): boolean {
+    public remove(entity) {
         // TODO: Implement this...
         return false;
     }
     
 }
 
-class Components<E extends Entity> {
+class Components {
     
-    private scene: Scene<E>;
-    private components: Map<ComponentConstructor, IStorage> = new Map();
+    private scene;
+    private components = new Map();
     
-    public constructor(scene: Scene<E>) {
+    public constructor(scene) {
         this.scene = scene;
     }
     
-    public register<C extends Component>(type: ComponentConstructor<C>): void {
+    public register(type) {
         const storage = new Storage(type);
         this.components.set(type, storage);
     }
     
-    public add<C extends Component>(type: ComponentConstructor<C>): (entity: Entity) => C {
-        const storage = this.components.get(type) as Storage<C>;
+    public add(type) {
+        const storage = this.components.get(type);
         return Storage.prototype.add.bind(storage);
     }
     
-    public remove<C extends Component>(type: ComponentConstructor<C>): (entity: Entity) => boolean {
-        const storage = this.components.get(type) as Storage<C>;
+    public remove(type) {
+        const storage = this.components.get(type);
         return Storage.prototype.remove.bind(storage);
     }
     
-    public get<C extends Component>(type: ComponentConstructor<C>): (entity: Entity) => Optional<C> {
-        const storage = this.components.get(type) as Storage<C>;
+    public get(type) {
+        const storage = this.components.get(type);
         return Storage.prototype.get.bind(storage);
     }
     

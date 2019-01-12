@@ -3,7 +3,7 @@ import Entity from '@core/Entity';
 
 export default class Hierarchy extends Component {
     
-    public parent?: Entity;
-    public children: Entity[] = [];
+    public parent;
+    public children = [];
     
 }
