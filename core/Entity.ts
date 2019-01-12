@@ -14,7 +14,7 @@ export default class Entity extends Unique {
     
 }
 
-export type Constructor<E extends Entity = Entity> = new (scene: Scene) => E;
+export type Constructor<E extends Entity = Entity> = new (scene: Scene<E>) => E;
 
 class Components {
     

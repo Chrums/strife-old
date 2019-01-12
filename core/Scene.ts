@@ -2,10 +2,10 @@ import Component, { Constructor as ComponentConstructor } from '@core/Component'
 import Entity, { Constructor as EntityConstructor } from '@core/Entity';
 import Storage, { IStorage } from '@core/Storage';
 
-export default class Scene<E extends Entity = Entity> {
+export default class Scene<E extends Entity> {
     
-    public entities: Entities;
-    public components: Components = new Components(this);
+    public entities: Entities<E>;
+    public components: Components<E> = new Components<E>(this);
     
     public constructor(type: EntityConstructor<E> = Entity as EntityConstructor<E>) {
         this.entities = new Entities(this, type);
@@ -13,14 +13,14 @@ export default class Scene<E extends Entity = Entity> {
     
 }
 
-export type Constructor<S extends Scene = Scene> = new () => Scene;
+export type Constructor<E extends Entity, S extends Scene<E>> = new (type: EntityConstructor<E>) => Scene<E>;
 
-class Entities<E extends Entity = Entity> {
+class Entities<E extends Entity> {
     
-    private scene: Scene;
+    private scene: Scene<E>;
     private type: EntityConstructor<E>;
     
-    public constructor(scene: Scene, type: EntityConstructor<E> = Entity as EntityConstructor<E>) {
+    public constructor(scene: Scene<E>, type: EntityConstructor<E> = Entity as EntityConstructor<E>) {
         this.scene = scene;
         this.type = type;
     }
@@ -38,12 +38,12 @@ class Entities<E extends Entity = Entity> {
     
 }
 
-class Components {
+class Components<E extends Entity> {
     
-    private scene: Scene;
+    private scene: Scene<E>;
     private components: Map<ComponentConstructor, IStorage> = new Map();
     
-    public constructor(scene: Scene) {
+    public constructor(scene: Scene<E>) {
         this.scene = scene;
     }
     
