@@ -32,6 +32,10 @@ module.exports = {
         }]
     },
     
+    node: {
+        readline: 'empty'
+    },
+    
     plugins: [
         new CheckerPlugin()
     ]

@@ -20,7 +20,15 @@ export default class Dispatcher {
     }
     
     public dispatch(): void {
-        this.events.forEach((events) => events.forEach(this.consume.bind(this)));
+        this.events.forEach(
+            (events) => {
+                const length = events.length;
+                for (let i = 0; i < length; i++) {
+                    const event = events.pop();
+                    this.consume(event);
+                }
+            }
+        );
     }
     
     private consume(event) {

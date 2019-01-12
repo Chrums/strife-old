@@ -12,6 +12,10 @@ export default class Entity extends Unique {
         this.scene = scene;
     }
     
+    public destroy() {
+        this.scene.entities.remove(this);
+    }
+    
 }
 
 class Components {

@@ -27,14 +27,11 @@ class Entities {
     }
     
     public add() {
-        const entity = new this.type(this.scene);
-        // TODO: Implement this...
-        return entity;
+        return new this.type(this.scene);
     }
     
     public remove(entity) {
-        // TODO: Implement this...
-        return false;
+        return this.scene.components.remove(entity);
     }
     
 }
@@ -58,7 +55,19 @@ class Components {
         return Storage.prototype.add.bind(storage);
     }
     
-    public remove(type) {
+    public remove(...args) {
+        if (args[0] instanceof Entity) this.removeByEntity(args[0]);
+        else if (args[0].prototype instanceof Component) this.removeByComponent(args[0]);
+        else throw new Error();
+    }
+    
+    private removeByEntity(entity) {
+        let result = false;
+        this.components.forEach((storage) => result = result || storage.remove(entity));
+        return result;
+    }
+    
+    private removeByComponent(type) {
         const storage = this.components.get(type);
         return Storage.prototype.remove.bind(storage);
     }
