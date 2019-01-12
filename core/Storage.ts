@@ -24,4 +24,8 @@ export default class Storage {
         return this.components.get(entity.id);
     }
     
+    public forEach(callback) {
+        this.components.forEach((component) => callback(component, component.entity, this));
+    }
+    
 }

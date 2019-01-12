@@ -1,11 +1,15 @@
 import Component from '@core/Component';
+import Dispatcher from '@core/Dispatcher';
 import Entity from '@core/Entity';
 import Storage from '@core/Storage';
+import System from '@core/System';
 
 export default class Scene {
     
+    public dispatcher = new Dispatcher();
     public entities = new Entities(this);;
     public components = new Components(this);
+    public systems =  new Systems(this);
     
 }
 
@@ -62,6 +66,26 @@ class Components {
     public get(type) {
         const storage = this.components.get(type);
         return Storage.prototype.get.bind(storage);
+    }
+    
+    public all(type) {
+        return this.components.get(type);
+    }
+    
+}
+
+class Systems {
+    
+    private scene;
+    private systems = new Map();
+    
+    public constructor(scene) {
+        this.scene = scene;
+    }
+    
+    public register(type) {
+        const system = new System(this.scene, type);
+        this.systems.set(type, system);
     }
     
 }
