@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "es2017",
+    "moduleResolution": "node",
+    "target": "es6",
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@root/*": [ "./*" ],
+      "@core/*": [ "./core/*" ],
+      "@common/*": [ "./common/*" ]
+    },
+    "lib": [
+      "es6",
+      "dom"
+    ],
+    "types": [
+      "webpack-env"
+    ],
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+  "exclude": [
+      "bin",
+      "node_modules"
+  ]
+}
