@@ -1,12 +1,11 @@
-import Event from '@core/Event';
+import Event from '@common/core/Event';
 
 export default class UpdateEvent extends Event {
     
-    public static Priority = 1024;
+    public static Priority: number = 1024;
     
     public constructor() {
         super();
-        
     }
     
 }

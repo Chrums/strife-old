@@ -1,14 +1,11 @@
-import Event from '@core/Event';
+import Event from '@common/core/Event';
 
 export default class RenderEvent extends Event {
     
-    public static Priority = 2048;
+    public static Priority: number = 2048;
     
-    public context;
-    
-    public constructor(context) {
+    public constructor() {
         super();
-        this.context = context;
     }
     
 }

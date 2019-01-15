@@ -1,41 +1,52 @@
-import Component from '@core/Component';
+import Component, { Constructor as ComponentConstructor } from '@core/Component';
 import Scene from '@core/Scene';
 import Unique from '@core/Unique';
 
+export interface Constructor<IEntity extends Entity> {
+    new (scene: Scene<IEntity>): IEntity;
+}
+
 export default class Entity extends Unique {
     
-    public scene;
-    public components = new Components(this);
+    public get scene(): Scene<this> {
+        return this.m_scene;
+    }
+    private m_scene: Scene<this>;
     
-    public constructor(scene) {
+    public get components(): Components<this> {
+        return this.m_components;
+    }
+    private m_components: Components<this> = new Components(this);
+    
+    public constructor(scene: Scene<any>) {
         super();
-        this.scene = scene;
+        this.m_scene = scene;
     }
     
-    public destroy() {
-        this.scene.entities.remove(this);
+    public destroy(): void {
+        this.m_scene.entities.remove(this);
     }
     
 }
 
-class Components {
+class Components<IEntity extends Entity> {
     
-    private entity;
+    private m_entity: IEntity;
     
-    public constructor(entity) {
-        this.entity = entity;
+    public constructor(entity: IEntity) {
+        this.m_entity = entity;
     }
     
-    public add(type) {
-        return this.entity.scene.components.add(type)(this.entity);
+    public add<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): IComponent {
+        return this.m_entity.scene.components.add(componentConstructor)(this.m_entity);
     }
     
-    public remove(type) {
-        return this.entity.scene.components.remove(type)(this.entity);
+    public remove<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): boolean {
+        return this.m_entity.scene.components.remove(componentConstructor)(this.m_entity);
     }
     
-    public get(type) {
-        return this.entity.scene.components.get(type)(this.entity);
+    public get<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): Optional<IComponent> {
+        return this.m_entity.scene.components.get(componentConstructor)(this.m_entity);
     }
     
 }

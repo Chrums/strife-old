@@ -1,31 +1,23 @@
-import Component from '@core/Component';
+import Component from '@common/core/Component';
+import Entity from '@common/core/Entity';
 import UpdateEvent from '@common/events/Update';
 
 export default class Hierarchy extends Component {
     
-    public parent;
-    public children: any[] = [];
-    
-    public move(target?: any): void {
-        if (this.parent == target) return;
-        if (this.parent) {
-            const hierarchy = this.parent.components.get(Hierarchy);
-            if (hierarchy) hierarchy.removeChild(this.entity);
-        }
-        if (target) {
-            const hierarchy = target.components.get(Hierarchy);
-            if (hierarchy) hierarchy.addChild(this.entity);
-        }
-        this.parent = target;
+    public get parent(): Optional<Entity> {
+        return this.m_parent;
     }
-    
-    private addChild(child) {
-        this.children.push(child);
+    public set parent(parent: Optional<Entity>) {
+        if (this.m_parent == parent) return;
+        if (parent) parent.hierarchy.children.push(this.entity);
+        if (this.m_parent) this.m_parent.hierarchy.m_children.splice(this.m_parent.hierarchy.m_children.indexOf(this.entity));
+        this.m_parent = parent;
     }
+    private m_parent?: Entity;
     
-    private removeChild(child) {
-        const index = this.children.indexOf(child);
-        if (index) this.children.splice(index, 1);
+    public get children(): Entity[] {
+        return this.m_children;
     }
+    private m_children: Entity[] = [];
     
 }
