@@ -1,109 +1,95 @@
 import Component, { Constructor as ComponentConstructor } from '@core/Component';
 import Dispatcher from '@core/Dispatcher';
 import Entity, { Constructor as EntityConstructor } from '@core/Entity';
-import Storage from '@core/Storage';
-import System from '@core/System';
+import Storage, { Constructor as StorageConstructor, IStorage } from '@core/Storage';
 
-export interface Constructor<IEntity extends Entity, IScene extends Scene<IEntity>> {
-    new (entityConstructor: EntityConstructor<IEntity>): IScene;
-}
-
-export default class Scene<IEntity extends Entity> {
+export default class Scene<EntityType extends Entity<EntityType>, StorageType extends IStorage<EntityType, any>> {
     
-    public get dispatcher(): Dispatcher<IEntity> {
-        return this.m_dispatcher;
-    }
-    private m_dispatcher: Dispatcher<IEntity> = new Dispatcher<IEntity>();
-    
-    public get entities(): Entities<IEntity> {
+    public get entities(): Entities<EntityType, StorageType> {
         return this.m_entities;
     }
-    private m_entities: Entities<IEntity>;
+    private m_entities: Entities<EntityType, StorageType>;
     
-    public get components(): Components<IEntity> {
+    public get components(): Components<EntityType, StorageType> {
         return this.m_components;
     }
-    private m_components: Components<IEntity> = new Components<IEntity>(this);
+    private m_components: Components<EntityType, StorageType>;
     
-    public get systems(): Systems<IEntity> {
-        return this.m_systems;
+    public get dispatcher(): Dispatcher<EntityType> {
+        return this.m_dispatcher;
     }
-    private m_systems: Systems<IEntity> = new Systems<IEntity>(this);
+    private m_dispatcher: Dispatcher<EntityType> = new Dispatcher();
     
-    public constructor(entityConstructor: EntityConstructor<IEntity>) {
-        this.m_entities = new Entities<IEntity>(this, entityConstructor);
+    public constructor(entityConstructor: EntityConstructor<EntityType>, storageConstructor: StorageConstructor<EntityType, any, StorageType>) {
+        this.m_entities = new Entities(this, entityConstructor);
+        this.m_components = new Components(this, storageConstructor);
+        Component.Initialize(this);
     }
     
 }
 
-class Entities<IEntity extends Entity> {
+class Entities<EntityType extends Entity<EntityType>, StorageType extends IStorage<EntityType, any>> {
     
-    private m_scene: Scene<IEntity>;
-    private m_constructor: EntityConstructor<IEntity>;
+    private m_scene: Scene<EntityType, StorageType>;
+    private m_entityConstructor: EntityConstructor<EntityType>;
     
-    public constructor(scene: Scene<IEntity>, entityConstructor: EntityConstructor<IEntity>) {
+    public constructor(scene: Scene<EntityType, StorageType>, entityConstructor: EntityConstructor<EntityType>) {
         this.m_scene = scene;
-        this.m_constructor = entityConstructor;
+        this.m_entityConstructor = entityConstructor;
     }
     
-    public add(): IEntity {
-        return new this.m_constructor(this.m_scene);
+    public add(): EntityType {
+        return new this.m_entityConstructor(this.m_scene);
     }
     
-    public remove(entity: IEntity): boolean {
+    public remove(): boolean {
         // TODO: Implement this...
         return false;
     }
     
 }
 
-class Components<IEntity extends Entity> {
+class Components<EntityType extends Entity<EntityType>, StorageType extends IStorage<EntityType, any>> {
     
-    private m_scene: Scene<IEntity>;
-    private m_components: Map<ComponentConstructor<IEntity, any>, Storage<IEntity, any>> = new Map();
+    private m_scene: Scene<EntityType, StorageType>;
+    private m_storageConstructor: StorageConstructor<EntityType, any, StorageType>;
+    private m_storages: Map<ComponentConstructor<EntityType, any>, StorageType> = new Map();
     
-    public constructor(scene: Scene<IEntity>) {
+    public constructor(scene: Scene<EntityType, StorageType>, storageConstructor: StorageConstructor<EntityType, any, StorageType>) {
         this.m_scene = scene;
+        this.m_storageConstructor = storageConstructor;
     }
     
-    public register<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): void {
-        const storage = new Storage(componentConstructor);
-        this.m_components.set(componentConstructor, storage);
+    public register<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>): void {
+        const storage = new this.m_storageConstructor(componentConstructor);
+        this.m_storages.set(componentConstructor, storage);
     }
     
-    public add<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): (entity: IEntity) => IComponent {
-        const storage = this.m_components.get(componentConstructor) as Storage<IEntity, IComponent>;
-        return (entity: IEntity): IComponent => storage.add(entity);
+    public add<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>): (entity: EntityType) => ComponentType {
+        return this.addByComponentTypeAndEntity.bind(this, componentConstructor) as (entity: EntityType) => ComponentType;
     }
     
-    public remove<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): (entity: IEntity) => boolean {
-        const storage = this.m_components.get(componentConstructor) as Storage<IEntity, IComponent>;
-        return (entity: IEntity): boolean => storage.remove(entity);
+    private addByComponentTypeAndEntity<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>, entity: EntityType): ComponentType {
+        const storage = this.m_storages.get(componentConstructor) as IStorage<EntityType, ComponentType>;
+        return storage.add(entity);
     }
     
-    public get<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): (entity: IEntity) => Optional<IComponent> {
-        const storage = this.m_components.get(componentConstructor) as Storage<IEntity, IComponent>;
-        return (entity: IEntity): Optional<IComponent> => storage.get(entity);
+    public remove<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>): (entity: EntityType) => boolean {
+        return this.removeByComponentTypeAndEntity.bind(this, componentConstructor) as (entity: EntityType) => boolean;
     }
     
-    public all<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): Storage<IEntity, IComponent> {
-        return this.m_components.get(componentConstructor) as Storage<IEntity, IComponent>;
+    private removeByComponentTypeAndEntity<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>, entity: EntityType): boolean {
+        const storage = this.m_storages.get(componentConstructor) as IStorage<EntityType, ComponentType>;
+        return storage.remove(entity);
     }
     
-}
-
-class Systems<IEntity extends Entity> {
-    
-    private m_scene: Scene<IEntity>;
-    private m_systems: Map<ComponentConstructor<IEntity, any>, System<IEntity, any>> = new Map();
-    
-    public constructor(scene: Scene<IEntity>) {
-        this.m_scene = scene;
+    public get<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>): (entity: EntityType) => Optional<ComponentType> {
+        return this.getByComponentTypeAndEntity.bind(this, componentConstructor) as (entity: EntityType) => Optional<ComponentType>;
     }
     
-    public register<IComponent extends Component<IEntity>>(componentConstructor: ComponentConstructor<IEntity, IComponent>): void {
-        const system = new System(this.m_scene, componentConstructor);
-        this.m_systems.set(componentConstructor, system);
+    private getByComponentTypeAndEntity<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>, entity: EntityType): Optional<ComponentType> {
+        const storage = this.m_storages.get(componentConstructor) as IStorage<EntityType, ComponentType>;
+        return storage.get(entity);
     }
     
 }

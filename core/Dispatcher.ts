@@ -1,55 +1,48 @@
+import Delegate from '@core/Delegate';
 import Entity from '@core/Entity';
 import Event, { Constructor as EventConstructor } from '@core/Event';
 
-export interface Constructor<IEntity extends Entity, IDispatcher extends Dispatcher<IEntity>> {
-    new (): IDispatcher;
-}
+export type Callback<EntityType extends Entity<EntityType>, EventType extends Event<EntityType>> = (event: EventType) => void;
 
-type Callback<IEntity extends Entity, IEvent extends Event<IEntity>> = (event: IEvent) => void;
-
-export default class Dispatcher<IEntity extends Entity> {
+export default class Dispatcher<EntityType extends Entity<EntityType>> {
     
-    private m_events: Event<IEntity>[][] = [];
-    private m_listeners = new Map<EventConstructor<IEntity, Event<IEntity>>, Callback<IEntity, Event<IEntity>>[]>();
+    private m_callbacks: Map<EventConstructor<EntityType, any>, Delegate<any>> = new Map();
+    private m_events: Map<number, Event<EntityType>[]> = new Map();
     
-    public on<IEvent extends Event<IEntity>>(eventConstructor: EventConstructor<IEntity, IEvent>): (callback: Callback<IEntity, IEvent>) => void {
-        return (callback: Callback<IEntity, IEvent>): void => {
-            const listeners = this.m_listeners.has(eventConstructor)
-                ? this.m_listeners.get(eventConstructor) as Callback<IEntity, IEvent>[]
-                : this.m_listeners.set(eventConstructor, []).get(eventConstructor) as Callback<IEntity, IEvent>[];
-            listeners.push(callback);
+    public on<EventType extends Event<EntityType>>(eventConstructor: EventConstructor<EntityType, EventType>): (callback: Callback<EntityType, EventType>) => void {
+        return this.onByEventTypeAndCallback.bind(this, eventConstructor) as (callback: Callback<EntityType, EventType>) => void;
+    }
+    
+    private onByEventTypeAndCallback<EventType extends Event<EntityType>>(eventConstructor: EventConstructor<EntityType, EventType>, callback: Callback<EntityType, EventType>): void {
+        if (!this.m_callbacks.has(eventConstructor)) this.m_callbacks.set(eventConstructor, new Delegate<EventType>());
+        const delegate = this.m_callbacks.get(eventConstructor) as Delegate<EventType>;
+        delegate.on(callback);
+    }
+    
+    public emit<EventType extends Event<EntityType>>(event: EventType): void {
+        const eventConstructor = event.constructor as EventConstructor<EntityType, EventType>;
+        const eventPriority = eventConstructor.Priority;
+        if (typeof eventPriority === 'undefined') this.dispatchByEvent(event);
+        else {
+            if (!this.m_events.has(eventPriority)) this.m_events.set(eventPriority, []);
+            const events = this.m_events.get(eventPriority) as Event<EntityType>[];
+            events.push(event);
         }
     }
     
-    public emit<IEvent extends Event<IEntity>>(event: IEvent) {
-        const eventConstructor = event.constructor as EventConstructor<IEntity, IEvent>;
-        if (!eventConstructor.Priority) this.consume(event);
-        else this.queue(event);
-    }
-    
     public dispatch(): void {
-        this.m_events.forEach(
-            (events: Event<IEntity>[]): void => {
-                const length = events.length;
-                for (let i = 0; i < length; i++) {
-                    const event = events.pop() as Event<IEntity>;
-                    this.consume(event);
-                }
-            }
-        );
+        this.m_events.forEach(this.dispatchByEvents.bind(this));
+        this.m_events.clear();
     }
     
-    private consume<IEvent extends Event<IEntity>>(event: IEvent): void {
-        const eventConstructor = event.constructor as EventConstructor<IEntity, IEvent>;
-        const listeners = this.m_listeners.get(eventConstructor);
-        if (listeners) listeners.forEach((listener: Callback<IEntity, IEvent>) => listener(event));
+    private dispatchByEvents<EventType extends Event<EntityType>>(events: EventType[]): void {
+        events.forEach(this.dispatchByEvent.bind(this));
     }
     
-    private queue<IEvent extends Event<IEntity>>(event: IEvent) {
-        const eventConstructor = event.constructor as EventConstructor<IEntity, IEvent>;
-        const priority = eventConstructor.Priority as number;
-        if (!this.m_events[priority]) this.m_events[priority] = [];
-        this.m_events[priority].push(event);
+    private dispatchByEvent<EventType extends Event<EntityType>>(event: EventType): void {
+        const eventConstructor = event.constructor as EventConstructor<EntityType, EventType>;
+        const delegate = this.m_callbacks.get(eventConstructor);
+        if (typeof delegate !== 'undefined') delegate.emit(event);
     }
     
 }

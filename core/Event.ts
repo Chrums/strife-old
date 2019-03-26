@@ -1,19 +1,17 @@
 import Entity from '@core/Entity';
 
-export interface Constructor<IEntity extends Entity, IEvent extends Event<IEntity>> {
-    new (entity?: IEntity): IEvent;
+//export type Constructor<EventType extends Event> = new (...args: any[]) => EventType;
+
+export interface Constructor<EntityType extends Entity<EntityType>, EventType extends Event<EntityType>> {
+    new (...args: any[]): EventType;
     Priority?: number;
 }
 
-export default class Event<IEntity extends Entity> {
+export default class Event<EntityType extends Entity<EntityType>> {
     
-    public get entity(): Optional<IEntity> {
+    public get entity(): Optional<EntityType> {
         return this.m_entity;
     }
-    private m_entity?: IEntity;
-    
-    public constructor(entity?: IEntity) {
-        this.m_entity = entity;
-    }
+    private m_entity?: EntityType;
     
 }

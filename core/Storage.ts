@@ -1,35 +1,36 @@
 import Component, { Constructor as ComponentConstructor } from '@core/Component';
 import Entity from '@core/Entity';
+import { Id } from '@core/Unique';
 
-export interface Constructor<IEntity extends Entity, IComponent extends Component<IEntity>, IStorage extends Storage<IEntity, IComponent>> {
-    new (componentConstructor: ComponentConstructor<IEntity, IComponent>): IStorage;
+export type Constructor<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>, StorageType extends IStorage<EntityType, ComponentType>> = new (componentConstructor: ComponentConstructor<any, ComponentType>) => StorageType;
+
+export interface IStorage<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>> {
+    add: (entity: EntityType) => ComponentType;
+    remove: (entity: EntityType) => boolean;
+    get: (entity: EntityType) => Optional<ComponentType>;
 }
 
-export default class Storage<IEntity extends Entity, IComponent extends Component<IEntity>> {
-    
-    private m_constructor: ComponentConstructor<IEntity, IComponent>;
-    private m_components: Map<string, IComponent> = new Map();
-    
-    public constructor(componentConstructor: ComponentConstructor<IEntity, IComponent>) {
-        this.m_constructor = componentConstructor;
+export default class Storage<EntityType extends Entity<EntityType>, ComponentType extends Component<any>> implements IStorage<EntityType, ComponentType> {
+
+    private m_componentConstructor: ComponentConstructor<EntityType, ComponentType>;
+    private m_components: Map<Id, ComponentType> = new Map();
+
+    public constructor(componentConstructor: ComponentConstructor<EntityType, ComponentType>) {
+        this.m_componentConstructor = componentConstructor;
     }
-    
-    public add(entity: IEntity): IComponent {
-        const component = new this.m_constructor(entity);
+
+    public add(entity: EntityType): ComponentType {
+        const component = new this.m_componentConstructor(entity);
         this.m_components.set(entity.id, component);
         return component;
     }
     
-    public remove(entity: IEntity): boolean {
+    public remove(entity: EntityType): boolean {
         return this.m_components.delete(entity.id);
     }
-    
-    public get(entity: IEntity): Optional<IComponent> {
+
+    public get(entity: EntityType): Optional<ComponentType> {
         return this.m_components.get(entity.id);
     }
-    
-    public forEach(callback: (component: IComponent, entity: IEntity, storage: Storage<IEntity, IComponent>) => void) {
-        this.m_components.forEach((component: IComponent) => callback(component, component.entity, this));
-    }
-    
+
 }
