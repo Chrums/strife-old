@@ -1,6 +1,6 @@
 import Component from '@common/core/Component';
-import Entity from '@common/core/Entity';
 
+@Component.Register
 export default class Transform extends Component {
     
     

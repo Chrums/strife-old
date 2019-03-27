@@ -4,13 +4,16 @@ import { Id } from '@core/Unique';
 
 export type Constructor<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>, StorageType extends IStorage<EntityType, ComponentType>> = new (componentConstructor: ComponentConstructor<any, ComponentType>) => StorageType;
 
+export type Callback<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>> = (component: ComponentType) => void;
+
 export interface IStorage<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>> {
     add: (entity: EntityType) => ComponentType;
     remove: (entity: EntityType) => boolean;
     get: (entity: EntityType) => Optional<ComponentType>;
+    forEach: (callback: Callback<EntityType, ComponentType>) => void;
 }
 
-export default class Storage<EntityType extends Entity<EntityType>, ComponentType extends Component<any>> implements IStorage<EntityType, ComponentType> {
+export default class Storage<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>> implements IStorage<EntityType, ComponentType> {
 
     private m_componentConstructor: ComponentConstructor<EntityType, ComponentType>;
     private m_components: Map<Id, ComponentType> = new Map();
@@ -31,6 +34,10 @@ export default class Storage<EntityType extends Entity<EntityType>, ComponentTyp
 
     public get(entity: EntityType): Optional<ComponentType> {
         return this.m_components.get(entity.id);
+    }
+    
+    public forEach(callback: Callback<EntityType, ComponentType>): void {
+        this.m_components.forEach(callback);
     }
 
 }

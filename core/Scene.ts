@@ -88,8 +88,12 @@ class Components<EntityType extends Entity<EntityType>, StorageType extends ISto
     }
     
     private getByComponentTypeAndEntity<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>, entity: EntityType): Optional<ComponentType> {
-        const storage = this.m_storages.get(componentConstructor) as IStorage<EntityType, ComponentType>;
+        const storage = this.m_storages.get(componentConstructor) as StorageType;
         return storage.get(entity);
+    }
+    
+    public all<ComponentType extends Component<EntityType>>(componentConstructor: ComponentConstructor<EntityType, ComponentType>): StorageType {
+        return this.m_storages.get(componentConstructor) as StorageType;
     }
     
 }

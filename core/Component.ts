@@ -1,6 +1,7 @@
 import Entity from '@core/Entity';
 import Event, { Constructor as EventConstructor } from '@core/Event';
 import Scene from '@core/Scene';
+import { IStorage } from '@core/Storage';
 import Unique from '@core/Unique';
 
 export type Constructor<EntityType extends Entity<EntityType>, ComponentType extends Component<EntityType>> = new (entity: EntityType) => ComponentType;
@@ -9,8 +10,36 @@ type Callback<EntityType extends Entity<EntityType>, EventType extends Event<Ent
 
 export default class Component<EntityType extends Entity<EntityType>> extends Unique {
     
-    public static Initialize<EntityType extends Entity<EntityType>>(scene: Scene<EntityType, any>) {
-        Component.Constructors.forEach((componentConstructor: Constructor<EntityType, any>): void => scene.components.register(componentConstructor));
+    public static Initialize<EntityType extends Entity<EntityType>, StorageType extends IStorage<EntityType, any>>(scene: Scene<EntityType, StorageType>) {
+        Component.Constructors.forEach(
+            (componentConstructor: Constructor<EntityType, any>): void => {
+                scene.components.register(componentConstructor)
+            }
+        );
+        Component.Callbacks.forEach(
+            (callbacks: Map<EventConstructor<any, any>, Callback<any, any>>, componentConstructor: Constructor<EntityType, any>): void => {
+                callbacks.forEach(
+                    (callback: Callback<any, any>, eventConstructor: EventConstructor<any, any>): void => {
+                        scene.dispatcher.on(eventConstructor)(
+                            (event: Event<EntityType>): void => {
+                                if (event.entity == undefined) {
+                                    scene.components.all(componentConstructor).forEach(
+                                        (component: Component<EntityType>): void => {
+                                            callback.call(component, event);
+                                        }
+                                    );
+                                } else {
+                                    const component = scene.components.get(componentConstructor)(event.entity);
+                                    if (component != undefined) {
+                                        callback.call(component, event);
+                                    }
+                                }
+                            }
+                        );
+                    }
+                );
+            }
+        );
     }
     
     public static Register<ComponentType extends Component<any>>(componentConstructor: Constructor<any, ComponentType>): void {
@@ -22,20 +51,20 @@ export default class Component<EntityType extends Entity<EntityType>> extends Un
     }
     private static m_componentConstructors: Constructor<any, any>[] = [];
     
-    public static On<EntityType extends Entity<EntityType>, EventType extends Event<EntityType>>(eventConstructor: EventConstructor<EntityType, EventType>): (target: any, identifier: string, descriptor: PropertyDescriptor) => void {
+    public static On(eventConstructor: EventConstructor<any, any>): (target: any, identifier: string, descriptor: PropertyDescriptor) => void {
         return (target: any, identifier: string, descriptor: PropertyDescriptor): void => {
-            const componentConstructor = target.constructor as Constructor<EntityType, any>;
-            const listeners = Component.Listeners.has(eventConstructor)
-                ? Component.Listeners.get(componentConstructor) as Map<EventConstructor<EntityType, EventType>, Callback<EntityType, EventType>>
-                : Component.Listeners.set(componentConstructor, new Map()).get(componentConstructor) as Map<EventConstructor<EntityType, EventType>, Callback<EntityType, EventType>>;
-            listeners.set(eventConstructor, descriptor.value);
+            const componentConstructor = target.constructor as Constructor<any, any>;
+            const callbacks = Component.Callbacks.has(componentConstructor)
+                ? Component.Callbacks.get(componentConstructor) as Map<EventConstructor<any, any>, Callback<any, any>>
+                : Component.Callbacks.set(componentConstructor, new Map()).get(componentConstructor) as Map<EventConstructor<any, any>, Callback<any, any>>;
+            callbacks.set(eventConstructor, descriptor.value);
         };
     }
     
-    public static get Listeners(): Map<Constructor<any, any>, Map<EventConstructor<any, any>, Callback<any, any>>> {
-        return Component.m_listeners;
+    public static get Callbacks(): Map<Constructor<any, any>, Map<EventConstructor<any, any>, Callback<any, any>>> {
+        return Component.m_callbacks;
     }
-    private static m_listeners: Map<Constructor<any, any>, Map<EventConstructor<any, any>, Callback<any, any>>> = new Map();
+    private static m_callbacks: Map<Constructor<any, any>, Map<EventConstructor<any, any>, Callback<any, any>>> = new Map();
 
     public get entity(): EntityType {
         return this.m_entity;
